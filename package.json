@@ -1,0 +1,35 @@
+{
+  "name": "desktop-google-calendar",
+  "version": "0.1.0",
+  "description": "Desktop Google Calendar Widget for Windows",
+  "author": "",
+  "license": "MIT",
+  "private": true,
+  "main": "out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build:icons": "node scripts/build-tray-icon.mjs",
+    "build": "npm run build:icons && vue-tsc --noEmit && electron-vite build",
+    "build:win": "npm run build && electron-builder --win",
+    "preview": "electron-vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "electron-store": "^8.1.0",
+    "googleapis": "^144.0.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.4",
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
+    "electron-vite": "^3.0.0",
+    "png-to-ico": "^3.0.1",
+    "sharp": "^0.33.5",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.10",
+    "vitest": "^2.1.9",
+    "vue": "^3.4.21",
+    "vue-tsc": "^2.0.6"
+  }
+}
