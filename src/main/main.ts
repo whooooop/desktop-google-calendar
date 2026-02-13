@@ -70,7 +70,7 @@ ipcMain.handle('get-settings', (): AppSettings => getSettings())
 ipcMain.handle('set-settings', async (_e, partial: Partial<AppSettings>) => {
   setSettings(partial)
   const full = getSettings()
-  applyWidgetAlwaysOnTop(full.alwaysOnTop)
+  applyWidgetAlwaysOnTop(full.alwaysOnTop ?? false)
   if (typeof partial.autoLaunch === 'boolean') {
     app.setLoginItemSettings({ openAtLogin: partial.autoLaunch })
   }

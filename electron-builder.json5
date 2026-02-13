@@ -2,16 +2,13 @@
   "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
   "appId": "com.desktop-google-calendar.widget",
   "productName": "Desktop Google Calendar",
-  "directories": {
-    "output": "release"
-  },
+  "directories": { "output": "release" },
   "files": ["out/**/*", "!out/renderer/**/*.map"],
   "extraResources": ["resources/tray-icon.png"],
   "win": {
-    "target": [
-      { "target": "nsis", "arch": ["x64"] }
-    ],
-    "icon": "resources/icon.ico"
+    "target": [{ "target": "nsis", "arch": ["x64"] }],
+    "icon": "resources/icon.ico",
+    "forceCodeSigning": false
   },
   "nsis": {
     "oneClick": false,

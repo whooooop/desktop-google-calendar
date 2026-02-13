@@ -113,7 +113,9 @@ const showCurrentTimeLine = computed(() => isToday.value && currentTimeTopPercen
 const currentTimeLineStyle = computed(() => {
   const p = currentTimeTopPercent.value
   const lineColor = props.currentTimeLineColor ?? '#fa8a52'
-  return p !== null ? { top: `${p}%`, backgroundColor: lineColor, '--current-time-line-color': lineColor } : {}
+  return p !== null
+    ? { top: `${p}%`, transform: 'translateY(-50%)', backgroundColor: lineColor, '--current-time-line-color': lineColor }
+    : {}
 })
 
 const dayNum = computed(() => props.day.date.getDate())

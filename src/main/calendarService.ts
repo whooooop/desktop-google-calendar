@@ -5,6 +5,7 @@ import { getWeekStartISO, getWeekEndISO } from '../utils/time'
 export interface CalendarEvent {
   id: string
   calendarId: string
+  calendarSummary?: string
   summary: string
   description?: string
   start: { dateTime?: string; date?: string }
@@ -276,7 +277,7 @@ export function createCalendarService(
 
   function startScheduler(): void {
     stopScheduler()
-    const intervalMs = Math.max(30, getSettings().refreshIntervalSeconds) * 1000
+    const intervalMs = Math.max(30, getSettings().refreshIntervalSeconds ?? 60) * 1000
     refreshTimer = setInterval(() => {
       refresh().catch(() => {})
     }, intervalMs)

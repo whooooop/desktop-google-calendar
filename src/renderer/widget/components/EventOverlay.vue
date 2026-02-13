@@ -156,10 +156,10 @@ function openInGoogleCalendar(): void {
   color: inherit;
   font-size: 0.9rem;
   margin-right: 0.5rem;
+  text-decoration: none;
 }
 .btn-primary {
-  background: currentColor;
-  color: #111;
+  color: #ffffff;
 }
 .btn-close {
   margin-right: 0;

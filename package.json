@@ -21,7 +21,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.4",
-    "electron": "^33.2.0",
+    "electron": "29.4.0",
     "electron-builder": "^25.1.8",
     "electron-vite": "^3.0.0",
     "png-to-ico": "^3.0.1",

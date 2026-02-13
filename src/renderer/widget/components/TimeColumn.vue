@@ -5,7 +5,7 @@
       :key="startHour + hour - 1"
       class="time-slot"
     >
-      {{ formatHour(startHour + hour - 1) }}
+      <span class="time-slot-label">{{ formatHour(startHour + hour - 1) }}</span>
     </div>
   </div>
 </template>
@@ -53,8 +53,14 @@ function formatHour(h: number): string {
 }
 .time-slot {
   height: 1.5rem;
-  line-height: 1.5rem;
-  text-align: right;
-  padding-right: 0.25rem;
+  position: relative;
+  box-sizing: border-box;
+}
+.time-slot-label {
+  position: absolute;
+  top: 0;
+  right: 0.25rem;
+  transform: translateY(-50%);
+  line-height: 1;
 }
 </style>
