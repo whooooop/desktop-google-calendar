@@ -4,7 +4,7 @@
   "productName": "Desktop Google Calendar",
   "directories": { "output": "release" },
   "files": ["out/**/*", "!out/renderer/**/*.map"],
-  "extraResources": ["resources/tray-icon.png"],
+  "extraResources": ["resources/tray-icon.png", "resources/icon.ico"],
   "win": {
     "target": [{ "target": "nsis", "arch": ["x64"] }],
     "icon": "resources/icon.ico",
