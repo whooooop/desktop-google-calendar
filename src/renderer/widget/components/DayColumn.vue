@@ -79,7 +79,7 @@ const eventsLayerHeight = computed(() => `${hourCount.value * SLOT_HEIGHT_REM}re
 const dayEvents = computed(() => props.events)
 
 const isToday = computed(() => {
-  const d = new Date()
+  const d = now.value
   const y = d.getFullYear()
   const m = String(d.getMonth() + 1).padStart(2, '0')
   const day = String(d.getDate()).padStart(2, '0')

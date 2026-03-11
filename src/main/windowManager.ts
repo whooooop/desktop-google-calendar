@@ -6,8 +6,8 @@ import { getCurrentUserProfiles } from './auth'
 const isDev = !app.isPackaged && process.env.ELECTRON_RENDERER_URL != null
 
 function getAppIconPath(): string {
-  const base = isDev ? join(process.cwd(), 'resources') : process.resourcesPath
-  return join(base, 'tray-icon.png')
+  if (isDev) return join(app.getAppPath(), 'resources', 'tray-icon.png')
+  return join(process.resourcesPath, 'tray-icon.png')
 }
 
 let widgetWindow: BrowserWindow | null = null
