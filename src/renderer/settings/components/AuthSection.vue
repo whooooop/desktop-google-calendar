@@ -7,6 +7,7 @@
         v-for="p in profiles"
         :key="p.email"
         class="account-row"
+        :class="{ 'needs-reauth': p.needsReauth }"
       >
         <img
           v-if="p.picture && !avatarFailed.has(p.email)"
@@ -17,7 +18,19 @@
           @error="onAvatarError(p.email)"
         />
         <span v-else class="account-avatar-placeholder" />
-        <span class="account-email">{{ p.email }}</span>
+        <span class="account-info">
+          <span class="account-email">{{ p.email }}</span>
+          <span v-if="p.needsReauth" class="reauth-badge">⚠ Re-authorization required</span>
+        </span>
+        <button
+          v-if="p.needsReauth"
+          type="button"
+          class="btn warning"
+          :disabled="loading"
+          @click="reauthorize(p.email)"
+        >
+          Re-authorize
+        </button>
         <button type="button" class="btn" @click="signOut(p.email)">Log out</button>
       </div>
     </template>
@@ -38,6 +51,7 @@ import { ref, onMounted } from 'vue'
 interface Profile {
   email: string
   picture: string | null
+  needsReauth: boolean
 }
 
 const profiles = ref<Profile[]>([])
@@ -50,17 +64,21 @@ function onAvatarError(email: string) {
 }
 
 function loadProfiles() {
-  if (window.electronAPI?.authGetCurrentProfiles) {
-    window.electronAPI.authGetCurrentProfiles().then((list) => {
+  if (window.electronAPI?.authGetProfilesWithStatus) {
+    window.electronAPI.authGetProfilesWithStatus().then((list) => {
       profiles.value = list
+    })
+  } else if (window.electronAPI?.authGetCurrentProfiles) {
+    window.electronAPI.authGetCurrentProfiles().then((list) => {
+      profiles.value = list.map((p) => ({ ...p, needsReauth: false }))
     })
   }
 }
 
 onMounted(() => {
   if (window.electronAPI?.onAuthCurrentProfiles) {
-    window.electronAPI.onAuthCurrentProfiles((list: Profile[]) => {
-      profiles.value = list
+    window.electronAPI.onAuthCurrentProfiles(() => {
+      loadProfiles()
     })
   }
   loadProfiles()
@@ -77,6 +95,23 @@ async function signIn() {
       await window.electronAPI.calendarRefresh?.()
     } else {
       authError.value = result.error ?? 'Sign in failed'
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
+async function reauthorize(email: string) {
+  authError.value = ''
+  if (!window.electronAPI?.authSignIn) return
+  loading.value = true
+  try {
+    const result = await window.electronAPI.authSignIn()
+    if (result.success) {
+      loadProfiles()
+      await window.electronAPI.calendarRefresh?.()
+    } else {
+      authError.value = result.error ?? `Re-authorization failed for ${email}`
     }
   } finally {
     loading.value = false
@@ -108,6 +143,12 @@ async function signOut(email: string) {
   margin-bottom: 0.75rem;
   flex-wrap: wrap;
 }
+.account-row.needs-reauth {
+  background: rgba(244, 135, 113, 0.08);
+  border: 1px solid rgba(244, 135, 113, 0.3);
+  border-radius: 6px;
+  padding: 0.5rem;
+}
 .account-avatar,
 .account-avatar-placeholder {
   width: 32px;
@@ -118,10 +159,21 @@ async function signOut(email: string) {
 .account-avatar-placeholder {
   background: #3a3a3a;
 }
+.account-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex: 1;
+  min-width: 0;
+}
 .account-email {
   font-size: 0.9rem;
   color: #e0e0e0;
   word-break: break-all;
+}
+.reauth-badge {
+  font-size: 0.78rem;
+  color: #f48771;
 }
 .auth-actions {
   margin-top: 0.25rem;
@@ -134,11 +186,17 @@ async function signOut(email: string) {
   background: #2d2d2d;
   color: #e0e0e0;
   font-size: 0.9rem;
+  white-space: nowrap;
 }
 .btn.primary {
   background: #4285f4;
   color: #fff;
   border-color: #4285f4;
+}
+.btn.warning {
+  background: #b85c00;
+  color: #fff;
+  border-color: #b85c00;
 }
 .btn:disabled {
   opacity: 0.7;

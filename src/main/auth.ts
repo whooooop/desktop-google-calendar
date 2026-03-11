@@ -17,6 +17,7 @@ export interface StoredAccount {
   refreshToken: string
   accessToken?: string
   expiry?: number
+  needsReauth?: boolean
 }
 
 interface TokenStore {
@@ -182,10 +183,18 @@ export async function getValidAccessTokens(): Promise<AccountWithToken[]> {
           expires_in?: number
           error?: string
         }
-        if (data.error || !data.access_token) continue
+        if (data.error || !data.access_token) {
+          // Permanent auth errors (revoked/expired refresh token) — mark account
+          const isPermanent = data.error === 'invalid_grant' || data.error === 'invalid_client'
+          if (isPermanent && !acc.needsReauth) {
+            accounts[i] = { ...acc, needsReauth: true }
+            changed = true
+          }
+          continue
+        }
         accessToken = data.access_token
         const expiryMs = Date.now() + (data.expires_in ?? 3600) * 1000
-        accounts[i] = { ...acc, accessToken, expiry: expiryMs }
+        accounts[i] = { ...acc, accessToken, expiry: expiryMs, needsReauth: false }
         changed = true
       } catch {
         continue
@@ -227,6 +236,20 @@ export function getCurrentUserProfiles(): CurrentUserProfile[] {
   return accounts.map((a) => ({
     email: a.email,
     picture: a.picture ?? null,
+  }))
+}
+
+export interface CurrentUserProfileWithStatus extends CurrentUserProfile {
+  needsReauth: boolean
+}
+
+/** Returns all stored accounts with their reauth status. No API fetch. */
+export function getCurrentUserProfilesWithStatus(): CurrentUserProfileWithStatus[] {
+  const accounts = ensureAccountsMigrated()
+  return accounts.map((a) => ({
+    email: a.email,
+    picture: a.picture ?? null,
+    needsReauth: a.needsReauth === true,
   }))
 }
 
@@ -421,6 +444,7 @@ export async function signIn(): Promise<SignInResult> {
           refreshToken: encryptOrEncode(storedRefresh),
           accessToken: data.access_token,
           expiry: expiryMs,
+          needsReauth: false,
         }
         if (existingIdx >= 0) {
           accounts[existingIdx] = newAccount

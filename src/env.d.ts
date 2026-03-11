@@ -10,6 +10,7 @@ declare global {
       getWidgetBounds?: () => Promise<Record<string, number>>
       authIsAuthenticated?: () => Promise<boolean>
       authGetCurrentProfiles?: () => Promise<Array<{ email: string; picture: string | null }>>
+      authGetProfilesWithStatus?: () => Promise<Array<{ email: string; picture: string | null; needsReauth: boolean }>>
       authSignIn?: () => Promise<{ success: boolean; error?: string }>
       authSignOut?: (email?: string) => Promise<void>
       openExternalUrl?: (url: string) => Promise<void>

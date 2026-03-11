@@ -1,5 +1,5 @@
 import { app as electronApp, ipcMain, shell } from 'electron'
-import { createTray } from './tray'
+import { createTray, updateTrayReauthStatus } from './tray'
 import {
   createWidgetWindow,
   createSettingsWindow,
@@ -11,7 +11,7 @@ import { getSettings, setSettings, getWidgetBounds } from './settingsStore'
 import type { AppSettings, WidgetBounds } from './settingsStore'
 import { createCalendarService } from './calendarService'
 import type { CalendarService, CalendarEvent } from './calendarService'
-import { isAuthenticated, signIn as authSignIn, signOut as authSignOut, getCurrentUserProfiles } from './auth'
+import { isAuthenticated, signIn as authSignIn, signOut as authSignOut, getCurrentUserProfiles, getCurrentUserProfilesWithStatus } from './auth'
 
 let calendarService: CalendarService | null = null
 let lastCalendarEvents: CalendarEvent[] = []
@@ -22,6 +22,10 @@ function sendEventsToWidget(events: CalendarEvent[]): void {
   if (win && !win.isDestroyed() && win.webContents) {
     win.webContents.send('calendar:events', events)
   }
+  const reauthEmails = getCurrentUserProfilesWithStatus()
+    .filter((p) => p.needsReauth)
+    .map((p) => p.email)
+  updateTrayReauthStatus(reauthEmails)
 }
 
 function initCalendarService(): void {
@@ -98,6 +102,7 @@ ipcMain.handle('calendar:refresh', async () => {
 })
 ipcMain.handle('auth:is-authenticated', (): boolean => isAuthenticated())
 ipcMain.handle('auth:get-current-profiles', () => getCurrentUserProfiles())
+ipcMain.handle('auth:get-profiles-with-status', () => getCurrentUserProfilesWithStatus())
 ipcMain.handle('auth:sign-in', async () => authSignIn())
 ipcMain.handle('auth:sign-out', (_e, email?: string) => {
   authSignOut(email)

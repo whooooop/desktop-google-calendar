@@ -9,6 +9,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   authIsAuthenticated: () => ipcRenderer.invoke('auth:is-authenticated'),
   authGetCurrentProfiles: () =>
     ipcRenderer.invoke('auth:get-current-profiles') as Promise<Array<{ email: string; picture: string | null }>>,
+  authGetProfilesWithStatus: () =>
+    ipcRenderer.invoke('auth:get-profiles-with-status') as Promise<Array<{ email: string; picture: string | null; needsReauth: boolean }>>,
   authSignIn: () => ipcRenderer.invoke('auth:sign-in'),
   authSignOut: (email?: string) => ipcRenderer.invoke('auth:sign-out', email),
   openExternalUrl: (url: string) => ipcRenderer.invoke('open-external-url', url),
