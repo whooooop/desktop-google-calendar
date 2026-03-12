@@ -12,6 +12,7 @@ function getAppIconPath(): string {
 
 let widgetWindow: BrowserWindow | null = null
 let settingsWindow: BrowserWindow | null = null
+let widgetFocusHandler: (() => void) | null = null
 
 function getPreloadPath(name: 'widget' | 'settings'): string {
   if (isDev) {
@@ -45,6 +46,8 @@ export function createWidgetWindow(): BrowserWindow {
   const bounds = getWidgetBounds()
   const settings = getSettings()
 
+  const isTop = Boolean(settings.alwaysOnTop)
+
   const win = new BrowserWindow({
     x: bounds.x,
     y: bounds.y,
@@ -59,7 +62,8 @@ export function createWidgetWindow(): BrowserWindow {
     backgroundColor: '#00000000',
     hasShadow: false,
     skipTaskbar: true,
-    alwaysOnTop: settings.alwaysOnTop,
+    alwaysOnTop: isTop,
+    focusable: isTop,
     show: false,
     webPreferences: {
       preload: getPreloadPath('widget'),
@@ -95,8 +99,18 @@ export function createWidgetWindow(): BrowserWindow {
     if (code !== -3) console.error('[widget] did-fail-load:', code, desc, url)
   })
 
+  // In bottom mode, prevent the window from stealing focus as a safety net
+  if (!isTop) {
+    widgetFocusHandler = () => {
+      if (win && !win.isDestroyed()) win.blur()
+    }
+    win.on('focus', widgetFocusHandler)
+  }
+
   win.once('ready-to-show', () => {
     win.show()
+    // In bottom mode, immediately blur so the window doesn't appear on top
+    if (!isTop) win.blur()
   })
 
   return win
@@ -170,8 +184,30 @@ export function closeSettingsWindow(): void {
   }
 }
 
-export function applyWidgetAlwaysOnTop(alwaysOnTop: boolean): void {
-  if (widgetWindow && !widgetWindow.isDestroyed()) {
-    widgetWindow.setAlwaysOnTop(alwaysOnTop)
+export function applyWidgetWindowLayer(alwaysOnTop: boolean): void {
+  if (!widgetWindow || widgetWindow.isDestroyed()) return
+
+  // Remove previous focus handler if any
+  if (widgetFocusHandler) {
+    widgetWindow.removeListener('focus', widgetFocusHandler)
+    widgetFocusHandler = null
+  }
+
+  if (alwaysOnTop) {
+    // Always on top: normal focusable window pinned above everything
+    widgetWindow.setFocusable(true)
+    widgetWindow.setAlwaysOnTop(true)
+  } else {
+    // Always on bottom (desktop widget mode):
+    // - Not focusable: OS won't activate/raise the window on click
+    // - Not always-on-top: sits below normal windows
+    // - Focus handler as safety net to immediately blur if somehow focused
+    widgetWindow.setAlwaysOnTop(false)
+    widgetWindow.setFocusable(false)
+    widgetFocusHandler = () => {
+      if (widgetWindow && !widgetWindow.isDestroyed()) widgetWindow.blur()
+    }
+    widgetWindow.on('focus', widgetFocusHandler)
+    widgetWindow.blur()
   }
 }

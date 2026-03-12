@@ -20,6 +20,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onAuthCurrentProfiles: (cb: (profiles: Array<{ email: string; picture: string | null }>) => void) => {
     ipcRenderer.on('auth:current-profiles', (_e, profiles: Array<{ email: string; picture: string | null }>) => cb(profiles))
   },
+  onSettingsUpdated: (cb: (settings: Record<string, unknown>) => void) => {
+    ipcRenderer.on('settings-updated', (_e, settings) => cb(settings))
+  },
   removeAllListeners: (channel: string) => {
     ipcRenderer.removeAllListeners(channel)
   },

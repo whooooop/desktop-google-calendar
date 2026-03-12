@@ -1,11 +1,11 @@
 import { app as electronApp, ipcMain, shell } from 'electron'
-import { createTray, updateTrayReauthStatus } from './tray'
+import { createTray, updateTrayReauthStatus, rebuildTrayMenu } from './tray'
 import {
   createWidgetWindow,
   createSettingsWindow,
   getWidgetWindow,
   getSettingsWindow,
-  applyWidgetAlwaysOnTop,
+  applyWidgetWindowLayer,
 } from './windowManager'
 import { getSettings, setSettings, getWidgetBounds } from './settingsStore'
 import type { AppSettings, WidgetBounds } from './settingsStore'
@@ -74,7 +74,8 @@ ipcMain.handle('get-settings', (): AppSettings => getSettings())
 ipcMain.handle('set-settings', async (_e, partial: Partial<AppSettings>) => {
   setSettings(partial)
   const full = getSettings()
-  applyWidgetAlwaysOnTop(full.alwaysOnTop ?? false)
+  applyWidgetWindowLayer(full.alwaysOnTop ?? false)
+  rebuildTrayMenu()
   if (typeof partial.autoLaunch === 'boolean') {
     app.setLoginItemSettings({ openAtLogin: partial.autoLaunch })
   }

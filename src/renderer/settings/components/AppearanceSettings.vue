@@ -8,10 +8,17 @@
       </label>
     </div>
     <div class="setting">
-      <label>
-        <input type="checkbox" :checked="alwaysOnTop" @change="setAlwaysOnTop" />
-        Always on top
-      </label>
+      <label class="setting-label">Window layer</label>
+      <div class="radio-group">
+        <label>
+          <input type="radio" name="windowLayer" value="top" :checked="alwaysOnTop" @change="setWindowLayer('top')" />
+          Always on top
+        </label>
+        <label>
+          <input type="radio" name="windowLayer" value="bottom" :checked="!alwaysOnTop" @change="setWindowLayer('bottom')" />
+          Desktop widget (always behind)
+        </label>
+      </div>
     </div>
     <div class="setting">
       <label>
@@ -98,6 +105,10 @@ onMounted(async () => {
     widgetTimeStartHour.value = Number(s.widgetTimeStartHour) ?? 7
     widgetTimeEndHour.value = Number(s.widgetTimeEndHour) ?? 20
   }
+  // Sync when settings are changed externally (e.g. from tray menu)
+  window.electronAPI?.onSettingsUpdated?.((s: Record<string, unknown>) => {
+    alwaysOnTop.value = Boolean(s.alwaysOnTop)
+  })
 })
 
 function setShowWeekends(e: Event) {
@@ -115,8 +126,8 @@ function setOpacity(e: Event) {
   opacity.value = v
   window.electronAPI?.setSettings({ opacity: v })
 }
-function setAlwaysOnTop(e: Event) {
-  const v = (e.target as HTMLInputElement).checked
+function setWindowLayer(layer: 'top' | 'bottom') {
+  const v = layer === 'top'
   alwaysOnTop.value = v
   window.electronAPI?.setSettings({ alwaysOnTop: v })
 }
@@ -178,6 +189,20 @@ function setWidgetTimeEnd(e: Event) {
   border: 1px solid #3a3a3a;
   color: #e0e0e0;
   border-radius: 4px;
+}
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
+}
+.radio-group label {
+  color: #e0e0e0;
+  cursor: pointer;
+}
+.setting-label {
+  color: #e0e0e0;
+  font-weight: 500;
 }
 .time-range {
   display: flex;

@@ -1,10 +1,12 @@
-import { app, Menu, Tray, nativeImage } from 'electron'
+import { app, BrowserWindow, Menu, Tray, nativeImage } from 'electron'
 import { join } from 'node:path'
 import {
   createSettingsWindow,
   createWidgetWindow,
   getWidgetWindow,
+  applyWidgetWindowLayer,
 } from './windowManager'
+import { getSettings, setSettings } from './settingsStore'
 import type { CalendarService } from './calendarService'
 
 let tray: Tray | null = null
@@ -37,9 +39,29 @@ function buildContextMenu(): Electron.Menu {
     click: () => createSettingsWindow(),
   }))
 
+  const settings = getSettings()
+  const isOnTop = Boolean(settings.alwaysOnTop)
+
   return Menu.buildFromTemplate([
     ...reauthItems,
     ...(reauthItems.length > 0 ? [{ type: 'separator' as const }] : []),
+    {
+      label: 'Always on top',
+      type: 'checkbox',
+      checked: isOnTop,
+      click: (menuItem) => {
+        const newValue = menuItem.checked
+        setSettings({ alwaysOnTop: newValue })
+        applyWidgetWindowLayer(newValue)
+        // Notify settings window if open
+        const settingsWin = BrowserWindow.getAllWindows()
+          .find(w => w !== getWidgetWindow() && !w.isDestroyed())
+        if (settingsWin) {
+          settingsWin.webContents.send('settings-updated', getSettings())
+        }
+      },
+    },
+    { type: 'separator' },
     {
       label: 'Open settings',
       click: () => createSettingsWindow(),
@@ -65,6 +87,12 @@ function buildContextMenu(): Electron.Menu {
       click: () => app.quit(),
     },
   ])
+}
+
+export function rebuildTrayMenu(): void {
+  if (tray && !tray.isDestroyed()) {
+    tray.setContextMenu(buildContextMenu())
+  }
 }
 
 export function updateTrayReauthStatus(reauthEmails: string[]): void {
