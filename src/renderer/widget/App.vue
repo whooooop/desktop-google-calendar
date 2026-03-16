@@ -26,6 +26,7 @@ const events = ref<CalendarEvent[]>([])
 const settings = ref<Record<string, unknown>>({})
 const selectedEvent = ref<CalendarEvent | null>(null)
 const newEventIds = ref<Set<string>>(new Set())
+let midnightTimer: ReturnType<typeof setTimeout> | null = null
 
 function clearNewEventId(id: string): void {
   const next = new Set(newEventIds.value)
@@ -83,6 +84,8 @@ onMounted(async () => {
   if (api?.requestCalendarEvents) {
     api.requestCalendarEvents()
   }
+  // Schedule a refresh at midnight so the grid shows the new day/week
+  scheduleMidnightRefresh()
   if (api?.onNewEventNotification) {
     api.onNewEventNotification((ids: string[]) => {
       if (Array.isArray(ids) && ids.length > 0) {
@@ -95,7 +98,19 @@ onMounted(async () => {
   }
 })
 
+function scheduleMidnightRefresh(): void {
+  if (midnightTimer) clearTimeout(midnightTimer)
+  const now = new Date()
+  const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+  const ms = tomorrow.getTime() - now.getTime() + 1000 // +1s buffer
+  midnightTimer = setTimeout(() => {
+    window.electronAPI?.requestCalendarEvents?.()
+    scheduleMidnightRefresh()
+  }, ms)
+}
+
 onUnmounted(() => {
+  if (midnightTimer) clearTimeout(midnightTimer)
   window.removeEventListener('resize', updateRemScale)
   window.electronAPI?.removeAllListeners?.('calendar:events')
   window.electronAPI?.removeAllListeners?.('calendar:new-event-notification')

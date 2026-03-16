@@ -55,7 +55,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import TimeColumn from './TimeColumn.vue'
 import DayColumn from './DayColumn.vue'
 import EventOverlay from './EventOverlay.vue'
@@ -86,6 +86,31 @@ function resolveEventColor(hex: string | undefined): string {
   if (!hex) return color.value
   return muteCalendarColors.value ? muteCalendarColor(hex) : hex
 }
+// Reactive date key that updates at midnight to refresh the grid
+const todayKey = ref(formatDayKey(new Date()))
+let midnightTimer: ReturnType<typeof setTimeout> | null = null
+
+function formatDayKey(d: Date): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+function scheduleMidnightRefresh(): void {
+  if (midnightTimer) clearTimeout(midnightTimer)
+  const now = new Date()
+  const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+  const ms = tomorrow.getTime() - now.getTime() + 500 // +500ms buffer
+  midnightTimer = setTimeout(() => {
+    todayKey.value = formatDayKey(new Date())
+    scheduleMidnightRefresh()
+  }, ms)
+}
+
+onMounted(() => scheduleMidnightRefresh())
+onUnmounted(() => { if (midnightTimer) clearTimeout(midnightTimer) })
+
 const timeStartHour = computed(() => {
   const v = Number(props.settings?.widgetTimeStartHour)
   return Number.isFinite(v) ? Math.max(0, Math.min(23, v)) : 7
@@ -96,6 +121,8 @@ const timeEndHour = computed(() => {
 })
 
 const visibleDays = computed(() => {
+  // todayKey dependency ensures recomputation when the day changes
+  void todayKey.value
   const days = getWeekDays(new Date())
   return showWeekends.value ? days : days.slice(0, 5)
 })
@@ -136,11 +163,7 @@ const allDayEventsInWeek = computed(() => {
 })
 
 function isDayToday(dayKey: string): boolean {
-  const d = new Date()
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}` === dayKey
+  return todayKey.value === dayKey
 }
 </script>
 
